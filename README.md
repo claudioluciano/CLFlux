@@ -2,6 +2,8 @@
 
 CLFlux is a state management pattern based on [Vuex](https://vuex.vuejs.org).
 
+[![nuget](https://img.shields.io/badge/nuget-download-blue.svg)](https://www.nuget.org/packages/CLFlux/)
+
 ------------
 
 #### Actions
