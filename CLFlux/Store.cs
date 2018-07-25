@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace CLFlux
@@ -115,11 +118,48 @@ namespace CLFlux
             return await task;
         }
 
-        private object[] GetParameters(System.Reflection.MethodInfo methodInfo, params (string Key, object Value)[] paramns)
+        private object[] GetParameters(MethodInfo methodInfo, params (string Key, object Value)[] paramns)
         {
             var parametersNames = methodInfo.GetParameters().Select(x => x.Name.ToUpper());
 
             return paramns.Where(p => parametersNames.Contains(p.Key)).Select(v => v.Value).ToArray();
+        }
+
+        public void WhenAny<T, TProperty>(string Key, Action<object> action, Expression<Func<T, TProperty>> property) where T : INotifyPropertyChanged
+        {
+            if (!_State.ContainsKey(Key))
+                return;
+
+            var state = _State[Key];
+
+            ((T)state).PropertyChanged += (object sender, PropertyChangedEventArgs e) =>
+            {
+                if (GetPropertyInfo(property).Name == e.PropertyName)
+                    action(e.PropertyName);
+            };
+        }
+
+        /// <summary>
+        /// Gets property information for the specified <paramref name="property"/> expression.
+        /// </summary>
+        /// <typeparam name="TSource">Type of the parameter in the <paramref name="property"/> expression.</typeparam>
+        /// <typeparam name="TValue">Type of the property's value.</typeparam>
+        /// <param name="property">The expression from which to retrieve the property information.</param>
+        /// <returns>Property information for the specified expression.</returns>
+        /// <exception cref="ArgumentException">The expression is not understood.</exception>
+        private PropertyInfo GetPropertyInfo<TSource, TValue>(Expression<Func<TSource, TValue>> property)
+        {
+            if (property == null)
+                throw new ArgumentNullException("property");
+
+            if (!(property.Body is MemberExpression body))
+                throw new ArgumentException("Expression is not a property", "property");
+
+            var propertyInfo = body.Member as PropertyInfo;
+            if (propertyInfo == null)
+                throw new ArgumentException("Expression is not a property", "property");
+
+            return propertyInfo;
         }
     }
 

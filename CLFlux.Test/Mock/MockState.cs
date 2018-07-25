@@ -1,7 +1,27 @@
-﻿namespace CLFlux.Test.Mock
+﻿using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+
+namespace CLFlux.Test.Mock
 {
-    public class MockState : IState
+    public class MockState : IState, INotifyPropertyChanged
     {
-        public int Value { get; set; }
+        private int _Value;
+
+        public int Value
+        {
+            get { return _Value; }
+            set { _Value = value; NotifyPropertyChanged(); }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        // This method is called by the Set accessor of each property.
+        // The CallerMemberName attribute that is applied to the optional propertyName
+        // parameter causes the property name of the caller to be substituted as an argument.
+        private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }

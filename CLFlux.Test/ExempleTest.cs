@@ -45,11 +45,21 @@ namespace CLFlux.Test
                  .Register(("Teste", getters))
                  .Register(("Teste", mutation));
 
+
+            store.WhenAny<MockState, int>("Teste", HandleValueChanged, x => x.Value);
+
             store.Commit("Teste", "Increment", 50);
+
 
             var ret = store.Getters("Teste", "GetValue");
 
+
             Assert.AreEqual(50, ret);
+        }
+
+        void HandleValueChanged(object propertyName)
+        {
+            //handle the property changed, nice
         }
 
         [TestMethod]
