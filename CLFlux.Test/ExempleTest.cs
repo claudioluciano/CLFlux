@@ -33,7 +33,7 @@ namespace CLFlux.Test
         [TestMethod]
         public void GettersExemple()
         {
-            var store = new Store();
+            IStore store = new Store();
 
             var state = new MockState();
 
@@ -51,7 +51,7 @@ namespace CLFlux.Test
             store.Commit("Teste", "Increment", 50);
 
 
-            var ret = store.Getters("Teste", "GetValue");
+            var ret = store.Getters<int>("Teste", "GetValue");
 
 
             Assert.AreEqual(50, ret);
@@ -65,7 +65,7 @@ namespace CLFlux.Test
         [TestMethod]
         public async Task ActionExemple()
         {
-            var store = new Store();
+            IStore store = new Store();
 
             var state = new MockState();
 
@@ -82,11 +82,11 @@ namespace CLFlux.Test
 
             store.Commit("Teste", "Increment", 50);
 
-            var ret1 = await store.Dispatch("Teste", "Increment");
+            var ret1 = await store.Dispatch<int>("Teste", "Increment");
 
-            var ret2 = await store.Dispatch("Teste", "Increment");
+            var ret2 = await store.Dispatch<int>("Teste", "Increment");
 
-            var ret = store.Getters("Teste", "GetValue");
+            var ret = store.Getters<int>("Teste", "GetValue");
 
             Assert.AreEqual(80, ret);
         }

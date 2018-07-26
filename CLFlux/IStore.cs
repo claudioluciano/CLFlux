@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.ComponentModel;
+using System.Linq.Expressions;
+using System.Threading.Tasks;
 
 namespace CLFlux
 {
@@ -6,9 +9,11 @@ namespace CLFlux
     {
         void Commit(string Key, string Mutation, object Payload);
 
-        object Getters(string Key, string Getter);
+        T Getters<T>(string Key, string Getter);
 
-        Task<object> Dispatch(string Key, string Actions, object Payload);
+        void WhenAny<T, TProperty>(string Key, Action<object> action, Expression<Func<T, TProperty>> property) where T : INotifyPropertyChanged;
+
+        Task<T> Dispatch<T>(string Key, string Actions, object Payload = null);
 
         Store Register(params (string Key, IState Value)[] collection);
 

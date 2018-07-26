@@ -74,10 +74,10 @@ namespace CLFlux
             method.Invoke(mutation, new object[] { state, Payload });
         }
 
-        public virtual object Getters(string Key, string Getter)
+        public virtual T Getters<T>(string Key, string Getter)
         {
             if (!_Getters.ContainsKey(Key))
-                return null;
+                return default(T);
 
             var getters = _Getters[Key];
 
@@ -87,17 +87,17 @@ namespace CLFlux
 
             var method = gettersType.GetMethod(Getter);
 
-            Action<string> gettersAction = (Getters) => this.Getters(Key, Getters);
+            Action<string> gettersAction = (Getters) => this.Getters<T>(Key, Getters);
 
             var parameters = GetParameters(method, ("STATE", state), ("GETTERS", gettersAction));
 
-            return method.Invoke(getters, parameters);
+            return (T)method.Invoke(getters, parameters);
         }
 
-        public async virtual Task<object> Dispatch(string Key, string Actions, object Payload = null)
+        public async virtual Task<T> Dispatch<T>(string Key, string Actions, object Payload = null)
         {
             if (!_Actions.ContainsKey(Key))
-                return null;
+                return default(T);
 
             var actions = _Actions[Key];
 
@@ -107,14 +107,14 @@ namespace CLFlux
 
             var method = actionsType.GetMethod(Actions);
 
-            Action<string, object> commit = (Mutation, PayloadMutation) => this.Commit(Key, Mutation, PayloadMutation);
+            Action<string, T> commit = (Mutation, PayloadMutation) => this.Commit(Key, Mutation, PayloadMutation);
 
-            Action<string> getters = (Getters) => this.Getters(Key, Getters);
+            Action<string> getters = (Getters) => this.Getters<T>(Key, Getters);
 
-            Action<string, object> dispatch = async (ActionDispatch, PayloadDispatch) => await this.Dispatch(Key, ActionDispatch, PayloadDispatch);
+            Action<string, T> dispatch = async (ActionDispatch, PayloadDispatch) => await this.Dispatch<T>(Key, ActionDispatch, PayloadDispatch);
 
             var parameters = GetParameters(method, ("STATE", state), ("COMMIT", commit), ("GETTERS", getters), ("DISPATCH", dispatch));
-            var task = (Task<object>)method.Invoke(actions, parameters);
+            var task = (Task<T>)method.Invoke(actions, parameters);
             return await task;
         }
 
@@ -135,7 +135,7 @@ namespace CLFlux
             ((T)state).PropertyChanged += (object sender, PropertyChangedEventArgs e) =>
             {
                 if (GetPropertyInfo(property).Name == e.PropertyName)
-                    action(e.PropertyName);
+                    action(sender.GetType().GetProperty(e.PropertyName).GetValue(sender));
             };
         }
 
