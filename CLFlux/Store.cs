@@ -15,6 +15,7 @@ namespace CLFlux
         protected Dictionary<string, IMutations> _Mutations { get; }
         protected Dictionary<string, IActions> _Actions { get; }
 
+
         public Store()
         {
             _State = new Dictionary<string, IState>();
@@ -84,22 +85,22 @@ namespace CLFlux
             if (!_Getters.ContainsKey(Key))
                 return default(T);
 
-            var getters = _Getters[Key];
+            var getter = _Getters[Key];
 
             var state = _State[Key];
 
-            var gettersType = getters.GetType();
+            var gettersType = getter.GetType();
 
             var method = gettersType.GetMethod(GetterName);
 
-            Action<string> gettersAction = (Getters) => this.Getters<T>(Key, Getters);
+            CLDelegate.CLGetters<T> clGetters = (getterName, key) => this.Getters<T>(getterName, key == "" ? Key : key);
 
-            var parameters = GetParameters(method, ("STATE", state), ("GETTERS", gettersAction));
+            var parameters = GetParameters(method, ("STATE", state), ("CLGETTERS", clGetters));
 
             if (method == null)
                 throw new NotImplementedException($"The method { GetterName } as not implemented");
 
-            return (T)method.Invoke(getters, parameters);
+            return (T)method.Invoke(getter, parameters);
         }
 
         public virtual async Task<T> Dispatch<T>(string Key, string ActionName, object Payload = null)
@@ -115,13 +116,13 @@ namespace CLFlux
 
             var method = actionsType.GetMethod(ActionName);
 
-            Action<string, T> commit = (Mutation, PayloadMutation) => this.Commit(Key, Mutation, PayloadMutation);
+            CLDelegate.CLCommit<T> commit = (mutationName, payloadMutation, key) => this.Commit(key == "" ? Key : key, mutationName, payloadMutation);
 
-            Action<string> getters = (Getters) => this.Getters<T>(Key, Getters);
+            CLDelegate.CLGetters<T> clGetters = (getterName, key) => this.Getters<T>(key == "" ? Key : key, getterName);
 
-            Action<string, T> dispatch = async (ActionDispatch, PayloadDispatch) => await this.Dispatch<T>(Key, ActionDispatch, PayloadDispatch);
+            CLDelegate.CLDispatch<T> dispatch = async (actionName, payloadDispatch, key) => await this.Dispatch<T>(key == "" ? Key : key, actionName, payloadDispatch);
 
-            var parameters = GetParameters(method, ("STATE", state), ("COMMIT", commit), ("GETTERS", getters), ("DISPATCH", dispatch));
+            var parameters = GetParameters(method, ("STATE", state), ("COMMIT", commit), ("CLGETTERS", clGetters), ("DISPATCH", dispatch));
 
             if (method == null)
                 throw new NotImplementedException($"The method { ActionName } as not implemented");
