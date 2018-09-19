@@ -6,12 +6,12 @@ namespace CLFlux.Test.Mock
 {
     public class MockState : IState, INotifyPropertyChanged
     {
-        private int _Value;
+        private int _value;
 
         public int Value
         {
-            get { return _Value; }
-            set { _Value = value; NotifyPropertyChanged(); }
+            get { return _value; }
+            set { _value = value; NotifyPropertyChanged(); }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

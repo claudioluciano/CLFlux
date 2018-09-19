@@ -5,7 +5,7 @@ namespace CLFlux.Test.Mock
 {
     public class MockActions : IActions
     {
-        public async Task<object> Increment(MockState state, Action<string, object> commit)
+        public async Task<int> Increment(Action<string, int> commit, MockState state, Action<string> getters)
         {
             await Task.Delay(TimeSpan.FromSeconds(5));
 

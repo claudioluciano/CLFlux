@@ -10,10 +10,10 @@ namespace CLFlux
 {
     public class Store : IStore
     {
-        public Dictionary<string, IState> _State { get; private set; }
-        public Dictionary<string, IGetters> _Getters { get; private set; }
-        public Dictionary<string, IMutations> _Mutations { get; private set; }
-        public Dictionary<string, IActions> _Actions { get; private set; }
+        protected Dictionary<string, IState> _State { get; }
+        protected Dictionary<string, IGetters> _Getters { get; }
+        protected Dictionary<string, IMutations> _Mutations { get; }
+        protected Dictionary<string, IActions> _Actions { get; }
 
         public Store()
         {
@@ -31,6 +31,7 @@ namespace CLFlux
 
             return this;
         }
+
         public Store Register(params (string Key, IGetters Value)[] collection)
         {
             foreach (var (Key, Value) in collection)
@@ -39,6 +40,7 @@ namespace CLFlux
 
             return this;
         }
+
         public Store Register(params (string Key, IMutations Value)[] collection)
         {
             foreach (var (Key, Value) in collection)
@@ -48,6 +50,7 @@ namespace CLFlux
             return this;
 
         }
+
         public Store Register(params (string Key, IActions Value)[] collection)
         {
             foreach (var (Key, Value) in collection)
@@ -55,10 +58,9 @@ namespace CLFlux
                     _Actions.Add(Key, Value);
 
             return this;
-
         }
 
-        public virtual void Commit(string Key, string Mutation, object Payload = null)
+        public virtual void Commit(string Key, string MutationName, object Payload = null)
         {
             if (!_Mutations.ContainsKey(Key))
                 return;
@@ -69,12 +71,15 @@ namespace CLFlux
 
             var mutationType = mutation.GetType();
 
-            var method = mutationType.GetMethod(Mutation);
+            var method = mutationType.GetMethod(MutationName);
 
-            method.Invoke(mutation, new object[] { state, Payload });
+            if (method == null)
+                throw new NotImplementedException($"The method { MutationName } as not implemented");
+
+            method.Invoke(mutation, Payload == null ? new object[] { state } : new[] { state, Payload });
         }
 
-        public virtual T Getters<T>(string Key, string Getter)
+        public virtual T Getters<T>(string Key, string GetterName)
         {
             if (!_Getters.ContainsKey(Key))
                 return default(T);
@@ -85,16 +90,19 @@ namespace CLFlux
 
             var gettersType = getters.GetType();
 
-            var method = gettersType.GetMethod(Getter);
+            var method = gettersType.GetMethod(GetterName);
 
             Action<string> gettersAction = (Getters) => this.Getters<T>(Key, Getters);
 
             var parameters = GetParameters(method, ("STATE", state), ("GETTERS", gettersAction));
 
+            if (method == null)
+                throw new NotImplementedException($"The method { GetterName } as not implemented");
+
             return (T)method.Invoke(getters, parameters);
         }
 
-        public async virtual Task<T> Dispatch<T>(string Key, string Actions, object Payload = null)
+        public virtual async Task<T> Dispatch<T>(string Key, string ActionName, object Payload = null)
         {
             if (!_Actions.ContainsKey(Key))
                 return default(T);
@@ -105,7 +113,7 @@ namespace CLFlux
 
             var actionsType = actions.GetType();
 
-            var method = actionsType.GetMethod(Actions);
+            var method = actionsType.GetMethod(ActionName);
 
             Action<string, T> commit = (Mutation, PayloadMutation) => this.Commit(Key, Mutation, PayloadMutation);
 
@@ -114,15 +122,35 @@ namespace CLFlux
             Action<string, T> dispatch = async (ActionDispatch, PayloadDispatch) => await this.Dispatch<T>(Key, ActionDispatch, PayloadDispatch);
 
             var parameters = GetParameters(method, ("STATE", state), ("COMMIT", commit), ("GETTERS", getters), ("DISPATCH", dispatch));
+
+            if (method == null)
+                throw new NotImplementedException($"The method { ActionName } as not implemented");
+
             var task = (Task<T>)method.Invoke(actions, parameters);
             return await task;
         }
 
         private object[] GetParameters(MethodInfo methodInfo, params (string Key, object Value)[] paramns)
         {
-            var parametersNames = methodInfo.GetParameters().Select(x => x.Name.ToUpper());
+            var parametersNames = methodInfo.GetParameters().Select(x => x.Name.ToUpper()).ToArray();
 
-            return paramns.Where(p => parametersNames.Contains(p.Key)).Select(v => v.Value).ToArray();
+            var actionHaveParamns = paramns.Where(p => parametersNames.Contains(p.Key)).ToArray();
+
+            var list = new (string Key, object Value)[actionHaveParamns.Count()];
+
+            for (var i = 0; i < actionHaveParamns.Count(); i++)
+            {
+                for (var j = 0; j < parametersNames.Count(); j++)
+                {
+                    if (actionHaveParamns[i].Key != parametersNames[j]) continue;
+
+                    list[j] = actionHaveParamns[i];
+                    break;
+
+                }
+            }
+
+            return list.Select(x => x.Value).ToArray();
         }
 
         public void WhenAny<T, TProperty>(string Key, Action<object> action, Expression<Func<T, TProperty>> property) where T : INotifyPropertyChanged

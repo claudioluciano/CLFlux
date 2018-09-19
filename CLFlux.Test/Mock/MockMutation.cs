@@ -2,7 +2,7 @@
 {
     public class MockMutation : IMutations
     {
-        public void Increment(ref MockState state, int payload)
+        public void Increment(MockState state, int payload)
         {
             state.Value += payload;
         }
