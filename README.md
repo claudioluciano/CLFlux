@@ -1,6 +1,6 @@
 # CLFlux
 
-CLFlux is a state management pattern based for .NET on [Vuex](https://vuex.vuejs.org).
+CLFlux is a state management pattern based for .NET on [Vuex](https://github.com/vuejs/vuex).
 You can use on Xamarin, WPF, WinForms e etc...
 
 [![nuget](https://img.shields.io/badge/nuget-download-blue.svg)](https://www.nuget.org/packages/CLFlux/)
