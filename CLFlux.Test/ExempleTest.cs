@@ -21,8 +21,8 @@ namespace CLFlux.Test
 
             var mutation = new MockMutation();
 
-            store.Register(("Teste", state)).
-                  Register(("Teste", mutation));
+            store.Register("Teste", state).
+                  Register("Teste", mutation);
 
             store.Commit("Teste", "Increment", 50);
 
@@ -41,9 +41,9 @@ namespace CLFlux.Test
 
             var mutation = new MockMutation();
 
-            store.Register(("Teste", state))
-                 .Register(("Teste", getters))
-                 .Register(("Teste", mutation));
+            store.Register("Teste", state)
+                 .Register("Teste", getters)
+                 .Register("Teste", mutation);
 
 
             store.WhenAny<MockState, int>("Teste", HandleValueChanged, x => x.Value);
@@ -75,10 +75,10 @@ namespace CLFlux.Test
 
             var actions = new MockActions();
 
-            store.Register(("Teste", state))
-                 .Register(("Teste", getters))
-                 .Register(("Teste", mutation))
-                 .Register(("Teste", actions));
+            store.Register("Teste", state)
+                 .Register("Teste", getters)
+                 .Register("Teste", mutation)
+                 .Register("Teste", actions);
 
             store.Commit("Teste", "Increment", 50);
 

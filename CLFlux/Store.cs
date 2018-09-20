@@ -24,39 +24,35 @@ namespace CLFlux
             _Actions = new Dictionary<string, IActions>();
         }
 
-        public Store Register(params (string Key, IState Value)[] collection)
+        public Store Register(string Key, IState Value)
         {
-            foreach (var (Key, Value) in collection)
-                if (!_State.ContainsKey(Key))
-                    _State.Add(Key, Value);
+            if (!_State.ContainsKey(Key))
+                _State.Add(Key, Value);
 
             return this;
         }
 
-        public Store Register(params (string Key, IGetters Value)[] collection)
+        public Store Register(string Key, IGetters Value)
         {
-            foreach (var (Key, Value) in collection)
-                if (!_Getters.ContainsKey(Key))
-                    _Getters.Add(Key, Value);
+            if (!_Getters.ContainsKey(Key))
+                _Getters.Add(Key, Value);
 
             return this;
         }
 
-        public Store Register(params (string Key, IMutations Value)[] collection)
+        public Store Register(string Key, IMutations Value)
         {
-            foreach (var (Key, Value) in collection)
-                if (!_Mutations.ContainsKey(Key))
-                    _Mutations.Add(Key, Value);
+            if (!_Mutations.ContainsKey(Key))
+                _Mutations.Add(Key, Value);
 
             return this;
 
         }
 
-        public Store Register(params (string Key, IActions Value)[] collection)
+        public Store Register(string Key, IActions Value)
         {
-            foreach (var (Key, Value) in collection)
-                if (!_Actions.ContainsKey(Key))
-                    _Actions.Add(Key, Value);
+            if (!_Actions.ContainsKey(Key))
+                _Actions.Add(Key, Value);
 
             return this;
         }

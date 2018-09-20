@@ -7,7 +7,7 @@ namespace CLFlux
 {
     public interface IStore
     {
-        void Commit(string Key, string Mutation, object Payload);
+        void Commit(string Key, string Mutation, object Payload = null);
 
         T Getters<T>(string Key, string Getter);
 
@@ -15,12 +15,12 @@ namespace CLFlux
 
         void WhenAny<T, TProperty>(string Key, Action<object> action, Expression<Func<T, TProperty>> property) where T : INotifyPropertyChanged;
 
-        Store Register(params (string Key, IState Value)[] collection);
+        Store Register(string Key, IState Value);
 
-        Store Register(params (string Key, IGetters Value)[] collection);
+        Store Register(string Key, IGetters Value);
 
-        Store Register(params (string Key, IMutations Value)[] collection);
+        Store Register(string Key, IMutations Value);
 
-        Store Register(params (string Key, IActions Value)[] collection);
+        Store Register(string Key, IActions Value);
     }
 }
