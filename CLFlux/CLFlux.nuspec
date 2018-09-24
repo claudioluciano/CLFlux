@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>CLFlux</id>
-    <version>1.4.1</version>
+    <version>1.4.5</version>
     <title>CLFlux</title>
     <authors>Claudio Luciano</authors>
     <owners>claudioluciano</owners>
@@ -10,6 +10,12 @@
     <licenseUrl>https://github.com/claudioluciano/CLFlux/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/claudioluciano/CLFlux</projectUrl>
     <description>CLFlux is a state management pattern for .NET based on Vuex.</description>
+    <summary>Feel free to contribute, any help are welcome</summary>
+    <releaseNotes>
+      Now Actions can return something,
+      Actions parameters no long need to be in order,
+      Removed return types from delegates, now they return object;
+    </releaseNotes>
     <tags>flux, state management, state, vuex, xamarin, redux, dot net, .net</tags>
   </metadata>
   <files>
