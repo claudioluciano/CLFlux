@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -51,7 +52,7 @@ namespace CLFlux.Test
             store.Commit("Teste", "Increment", 50);
 
 
-            var ret = store.Getters<int>("Teste", "GetValue");
+            var ret = store.Getters("Teste", "GetValue");
 
 
             Assert.AreEqual(50, ret);
@@ -84,9 +85,11 @@ namespace CLFlux.Test
 
             var ret1 = await store.Dispatch<int>("Teste", "Increment");
 
-            var ret2 = await store.Dispatch<int>("Teste", "Increment");
+            //await store.Dispatch("Teste", "IncrementTeste");
 
-            var ret = store.Getters<int>("Teste", "GetValue");
+            //var ret2 = await store.Dispatch<int>("Teste", "Increment");
+
+            var ret = store.Getters("Teste", "GetValue");
 
             Assert.AreEqual(80, ret);
         }

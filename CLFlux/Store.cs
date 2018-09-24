@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace CLFlux
@@ -14,7 +15,6 @@ namespace CLFlux
         protected Dictionary<string, IGetters> _Getters { get; }
         protected Dictionary<string, IMutations> _Mutations { get; }
         protected Dictionary<string, IActions> _Actions { get; }
-
 
         public Store()
         {
@@ -57,7 +57,7 @@ namespace CLFlux
             return this;
         }
 
-        public virtual void Commit(string Key, string MutationName, object Payload = null)
+        public virtual void Commit<T>(string Key, string MutationName, T Payload = default(T))
         {
             if (!_Mutations.ContainsKey(Key))
                 return;
@@ -73,13 +73,13 @@ namespace CLFlux
             if (method == null)
                 throw new NotImplementedException($"The method { MutationName } as not implemented");
 
-            method.Invoke(mutation, Payload == null ? new object[] { state } : new[] { state, Payload });
+            method.Invoke(mutation, Payload == null ? new object[] { state } : new object[] { state, Payload });
         }
 
-        public virtual T Getters<T>(string Key, string GetterName)
+        public virtual object Getters(string Key, string GetterName)
         {
             if (!_Getters.ContainsKey(Key))
-                return default(T);
+                return default(object);
 
             var getter = _Getters[Key];
 
@@ -89,20 +89,18 @@ namespace CLFlux
 
             var method = gettersType.GetMethod(GetterName);
 
-            CLDelegate.CLGetters<T> clGetters = (getterName, key) => this.Getters<T>(getterName, key == "" ? Key : key);
-
-            var parameters = GetParameters(method, ("STATE", state), ("CLGETTERS", clGetters));
+            var parameters = this.parameters(method, state);
 
             if (method == null)
                 throw new NotImplementedException($"The method { GetterName } as not implemented");
 
-            return (T)method.Invoke(getter, parameters);
+            return method.Invoke(getter, parameters);
         }
 
-        public virtual async Task<T> Dispatch<T>(string Key, string ActionName, object Payload = null)
+        public virtual async Task<object> Dispatch<T>(string Key, string ActionName, T Payload = default(T))
         {
             if (!_Actions.ContainsKey(Key))
-                return default(T);
+                return default(object);
 
             var actions = _Actions[Key];
 
@@ -112,24 +110,160 @@ namespace CLFlux
 
             var method = actionsType.GetMethod(ActionName);
 
-            CLDelegate.CLCommit<T> commit = (mutationName, payloadMutation, key) => this.Commit(key == "" ? Key : key, mutationName, payloadMutation);
-
-            CLDelegate.CLGetters<T> clGetters = (getterName, key) => this.Getters<T>(key == "" ? Key : key, getterName);
-
-            CLDelegate.CLDispatch<T> dispatch = async (actionName, payloadDispatch, key) => await this.Dispatch<T>(key == "" ? Key : key, actionName, payloadDispatch);
-
-            var parameters = GetParameters(method, ("STATE", state), ("COMMIT", commit), ("CLGETTERS", clGetters), ("DISPATCH", dispatch));
+            var parameters = this.parameters(method, state);
 
             if (method == null)
                 throw new NotImplementedException($"The method { ActionName } as not implemented");
 
-            var task = (Task<T>)method.Invoke(actions, parameters);
-            return await task;
+            var task = method.Invoke(actions, parameters);
+
+            if (task == null)
+                return default(object);
+
+            if (task is Task<object>)
+                return await (task as Task<object>);
+            else
+            {
+                await (task as Task);
+                return default(object);
+            }
         }
 
-        private object[] GetParameters(MethodInfo methodInfo, params (string Key, object Value)[] paramns)
+        private object[] parameters(MethodInfo method, IState state)
         {
-            var parametersNames = methodInfo.GetParameters().Select(x => x.Name.ToUpper()).ToArray();
+            var parametersFromMethod = GetParametersFromMethod(method);
+
+            var parametersNames = parametersFromMethod.Select(x => x.name).ToArray();
+
+            var listParamns = new List<(string, object)>();
+
+            if (parametersFromMethod.Any(x => typeof(IState).IsAssignableFrom(x.type)))
+            {
+                var name = parametersFromMethod.First(x => typeof(IState).IsAssignableFrom(x.type));
+
+                listParamns.Add((name.name, state));
+            }
+
+            if (parametersNames.Contains("CLGETTERS"))
+            {
+                var getterType = parametersFromMethod.First(x => x.name == "CLGETTERS");
+
+                listParamns.Add((getterType.name, GenerateGettersDelegate()));
+            }
+
+            if (parametersNames.Contains("CLCOMMIT"))
+            {
+                var mutationType = parametersFromMethod.First(x => x.name == "CLCOMMIT");
+
+                listParamns.Add((mutationType.name, GenerateCommitDelegate(mutationType.type)));
+            }
+
+            if (parametersNames.Contains("CLDISPATCH"))
+            {
+                var actionType = parametersFromMethod.First(x => x.name == "CLDISPATCH");
+
+                listParamns.Add((actionType.name, GenerateDispatchDelegate(actionType.type)));
+            }
+
+            return OrderParamns(method, listParamns.ToArray());
+        }
+
+        private object GenerateGettersDelegate()
+        {
+            //// create the delegate type so we can find the appropriate constructor
+            //var delegateType = typeof(CLDelegate.CLGetters).MakeGenericType(getterType.GenericTypeArguments);
+
+            //// work out concrete type for calling the generic MyMethod
+            //var gettersMethodInfo = this.GetType().GetMethod("Getters");
+
+            //// create an instance of the delegate type wrapping MyMethod so we can pass it to the constructor
+            //var delegateInstance = Delegate.CreateDelegate(delegateType, this, gettersMethodInfo);
+
+            return new CLDelegate.CLGetters((getterName, key) => this.Getters(getterName, key));
+        }
+
+        private object GenerateCommitDelegate(Type commitType)
+        {
+            // create the delegate type so we can find the appropriate constructor
+            var delegateType = typeof(CLDelegate.CLCommit<>).MakeGenericType(commitType.GenericTypeArguments);
+
+            // work out concrete type for calling the generic MyMethod
+            var commitMethodInfo =
+                this.GetType().GetMethod("Commit").MakeGenericMethod(commitType.GenericTypeArguments);
+
+            // create an instance of the delegate type wrapping MyMethod so we can pass it to the constructor
+            var delegateInstance = Delegate.CreateDelegate(delegateType, this, commitMethodInfo);
+
+            return delegateInstance;
+
+
+
+
+
+
+
+
+
+            //var commitMethodInfo = this.GetType().GetMethod("Commit");
+
+            ////var commitWithParams = gettersMethodInfo.MakeGenericMethod(commitType);
+
+            //var del = typeof(CLDelegate.CLCommit<>).MakeGenericType(commitType);
+
+            //return Delegate.CreateDelegate(del, commitMethodInfo);
+
+
+            //return new CLDelegate.CLGetters((key, name) => this.Getters(key, name));
+
+
+            //return (mutationName, payload, key) => Commit(key == "" ? CurrentKey : key, mutationName, payload);
+        }
+
+        private Delegate GenerateDispatchDelegate(Type dispatchType)
+        {
+            var delegateType = typeof(CLDelegate.CLDispatch<>).MakeGenericType(dispatchType.GenericTypeArguments);
+
+            // work out concrete type for calling the generic MyMethod
+            var dispatchMethodInfo = this.GetType().GetMethod("Dispatch").MakeGenericMethod(dispatchType.GenericTypeArguments);
+
+            // create an instance of the delegate type wrapping MyMethod so we can pass it to the constructor
+            var delegateInstance = Delegate.CreateDelegate(delegateType, this, dispatchMethodInfo);
+
+            return delegateInstance;
+
+
+
+
+
+            //var dispatchMethodInfo = this.GetType().GetMethod("Dispatch");
+
+            //var dispatchWithParams = dispatchMethodInfo.MakeGenericMethod(dispatchType);
+
+            //var del = typeof(CLDelegate.CLDispatch<>).MakeGenericType(dispatchType);
+
+            //return Delegate.CreateDelegate(del, dispatchWithParams);
+
+            //return (actionName, payload, key) => (Task<dynamic>)dispatchWithParams.Invoke(this, new[] { key == "" ? CurrentKey : key, actionName, payload });
+        }
+
+        private (string name, Type type)[] GetParametersFromMethod(MethodInfo methodInfo)
+        {
+
+            var parameters = methodInfo.GetParameters()
+                .Select(x => (name: GetName(x.ParameterType.Name.ToUpper()), type: x.ParameterType)).ToArray();
+
+            return parameters;
+        }
+
+        private string GetName(string name)
+        {
+            return Regex.Replace(name, "[^a-zA-Z]", "");
+        }
+
+        private object[] OrderParamns(MethodInfo methodInfo, params (string Key, object Value)[] paramns)
+        {
+            var parametersNames = methodInfo.GetParameters()
+                .Select(x => GetName(x.ParameterType.Name.ToUpper())).ToArray();
 
             var actionHaveParamns = paramns.Where(p => parametersNames.Contains(p.Key)).ToArray();
 
@@ -143,7 +277,6 @@ namespace CLFlux
 
                     list[j] = actionHaveParamns[i];
                     break;
-
                 }
             }
 
@@ -187,5 +320,4 @@ namespace CLFlux
             return propertyInfo;
         }
     }
-
 }

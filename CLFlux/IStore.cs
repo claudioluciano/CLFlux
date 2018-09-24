@@ -7,11 +7,11 @@ namespace CLFlux
 {
     public interface IStore
     {
-        void Commit(string Key, string Mutation, object Payload = null);
+        void Commit<T>(string Key, string Mutation, T Payload = default(T));
 
-        T Getters<T>(string Key, string Getter);
+        object Getters(string Key, string Getter);
 
-        Task<T> Dispatch<T>(string Key, string Actions, object Payload = null);
+        Task<object> Dispatch<T>(string Key, string Actions, T Payload = default(T));
 
         void WhenAny<T, TProperty>(string Key, Action<object> action, Expression<Func<T, TProperty>> property) where T : INotifyPropertyChanged;
 

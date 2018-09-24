@@ -5,15 +5,14 @@ namespace CLFlux.Test.Mock
 {
     public class MockActions : IActions
     {
-        public async Task<int> Increment(CLDelegate.CLCommit<int> commit, MockState state, CLDelegate.CLGetters<int> clGetters)
+        public async void Increment(CLDelegate.CLDispatch<int> clDispatch, CLDelegate.CLCommit<int> commit, MockState state, CLDelegate.CLGetters clGetters)
         {
-            await Task.Delay(TimeSpan.FromSeconds(5));
+            await Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith(a =>
+            {
+                var test = clGetters("Teste", "GetValue");
 
-            var test = clGetters("GetValue");
-
-            commit("Increment", 15);
-
-            return state.Value;
+                commit("Teste", "Increment", 15);
+            });
         }
     }
 }
