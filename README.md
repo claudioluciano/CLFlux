@@ -67,10 +67,10 @@ IMutations mutation = new MyMutation();
 
 IActions actions = new MyActions();
 
-store.Register(("App", state))
-	 .Register(("App", getters))
-	 .Register(("App", mutation))
-	 .Register(("App", actions));
+store.Register("App", state)
+	 .Register("App", getters)
+	 .Register("App", mutation)
+	 .Register("App", actions);
 
 ```
 
@@ -148,7 +148,7 @@ store.Commit("App", "Increment", 50);
 var ret1 = await store.Dispatch<int>("App", "Increment");
 
  //GetValue Getters
-var ret = store.Getters<int>("App", "GetValue");
+var ret = store.Getters("App", "GetValue");
 ```
 
 
