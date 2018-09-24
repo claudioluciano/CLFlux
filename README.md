@@ -136,10 +136,10 @@ IMutations mutation = new MyMutation();
 
 IActions actions = new MyActions();
  
-store.Register(("App", state))
-     .Register(("App", getters))
-     .Register(("App", mutation))
-     .Register(("App", actions));   
+store.Register("App", state)
+     .Register("App", getters)
+     .Register("App", mutation)
+     .Register("App", actions);   
 
  //Increment mutation
 store.Commit("App", "Increment", 50);
