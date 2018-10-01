@@ -67,10 +67,10 @@ IMutations mutation = new MyMutation();
 
 IActions actions = new MyActions();
 
-store.Register(("App", state))
-	 .Register(("App", getters))
-	 .Register(("App", mutation))
-	 .Register(("App", actions));
+store.Register("App", state)
+	 .Register("App", getters)
+	 .Register("App", mutation)
+	 .Register("App", actions);
 
 ```
 
@@ -80,11 +80,11 @@ The "App" in *store.Register(("App", state))* is the key for the module, you can
 
 ##### The Delegate actions for Actions and Getters
 ```csharp
-public delegate T CLGetters<T>(string getterName, string key = "");
- 
-public delegate void CLCommit<T>(string mutationName, T payloadMutation, string key = "");
- 
-public delegate Task<T> CLDispatch<T>(string actionName, T payloadAction, string key = "");
+   public delegate object CLGetters(string Key, string GetterName);
+
+   public delegate void CLCommit<TPayload>(string key, string mutationName, TPayload payloadMutation);
+
+   public delegate Task<object> CLDispatch<TPayload>(string key, string actionName, TPayload payloadAction);
 ```
 ##### The key is optional if you leave it blank the method will use the same key as the current module
 
@@ -92,22 +92,22 @@ public delegate Task<T> CLDispatch<T>(string actionName, T payloadAction, string
 Getters can have State and Another Getters like this
 
 ```csharp
-public int GetValue(MockState state, CLDelegate.CLGetters<int> clGetters)
+public int GetValue(MockState state, CLDelegate.CLGetters clGetters)
 {
-	var val = clGetters("AnotherGetValue");
+	var val = clGetters("MyAwesomeKey", "AnotherGetValue");
 }
 ```
 
 Actions can have State, Mutations,  Getters and Another Actions like this
 
 ```csharp
-public async Task<int> Increment(CLDelegate.CLCommit<int> commit, MockState state, CLDelegate.CLGetters<int> clGetters)
+public async Task<int> Increment(CLDelegate.CLCommit<int> commit, MockState state, CLDelegate.CLGetters clGetters)
 {
 	await Task.Delay(TimeSpan.FromSeconds(5));
  
-	var test = clGetters("GetValue");
+	var test = clGetters("MyAwesomeKey", "GetValue");
  
-	commit("Increment", 15);
+	commit("MyAwesomeKey", "Increment", 15);
  
 	return state.Value;
 }
@@ -136,10 +136,10 @@ IMutations mutation = new MyMutation();
 
 IActions actions = new MyActions();
  
-store.Register(("App", state))
-     .Register(("App", getters))
-     .Register(("App", mutation))
-     .Register(("App", actions));   
+store.Register("App", state)
+     .Register("App", getters)
+     .Register("App", mutation)
+     .Register("App", actions);   
 
  //Increment mutation
 store.Commit("App", "Increment", 50);
@@ -148,7 +148,7 @@ store.Commit("App", "Increment", 50);
 var ret1 = await store.Dispatch<int>("App", "Increment");
 
  //GetValue Getters
-var ret = store.Getters<int>("App", "GetValue");
+var ret = store.Getters("App", "GetValue");
 ```
 
 
