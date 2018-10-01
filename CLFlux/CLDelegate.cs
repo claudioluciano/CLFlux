@@ -4,7 +4,7 @@ namespace CLFlux
 {
     public class CLDelegate
     {
-        public delegate object CLGetters(string Key, string GetterName);
+        public delegate object CLGetters<TReturn>(string Key, string GetterName);
 
         public delegate void CLCommit<TPayload>(string key, string mutationName, TPayload payloadMutation);
 

@@ -7,9 +7,11 @@ namespace CLFlux
 {
     public interface IStore
     {
-        void Commit<T>(string Key, string Mutation, T Payload = default(T));
+        void Commit<T>(string Key, string MutationName, T Payload = default(T));
 
-        object Getters(string Key, string Getter);
+        void Commit(string Key, string MutationName);
+
+        TReturn Getters<TReturn>(string Key, string GetterName);
 
         Task<object> Dispatch<T>(string Key, string Actions, T Payload = default(T));
 

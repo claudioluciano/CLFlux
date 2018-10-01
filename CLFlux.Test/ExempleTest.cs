@@ -49,13 +49,11 @@ namespace CLFlux.Test
 
             store.WhenAny<MockState, int>("Teste", HandleValueChanged, x => x.Value);
 
-            store.Commit("Teste", "Increment", 50);
+            store.Commit("Teste", "Increment", 15);
 
+            var ret = store.Getters<int>("Teste", "GetValue");
 
-            var ret = store.Getters("Teste", "GetValue");
-
-
-            Assert.AreEqual(50, ret);
+            Assert.AreEqual(15, ret);
         }
 
         void HandleValueChanged(object propertyName)
@@ -89,7 +87,7 @@ namespace CLFlux.Test
 
             //var ret2 = await store.Dispatch<int>("Teste", "Increment");
 
-            var ret = store.Getters("Teste", "GetValue");
+            var ret = store.Getters<int>("Teste", "GetValue");
 
             Assert.AreEqual(80, ret);
         }

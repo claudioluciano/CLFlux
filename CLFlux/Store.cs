@@ -57,14 +57,41 @@ namespace CLFlux
             return this;
         }
 
+
+
         public virtual void Commit<T>(string Key, string MutationName, T Payload = default(T))
         {
             if (!_Mutations.ContainsKey(Key))
                 return;
 
-            var mutation = _Mutations[Key];
+            var (method, mutation) = GetCommit(Key, MutationName);
+
+            if (method == null)
+                return;
 
             var state = _State[Key];
+
+            method.Invoke(mutation, new object[] { state, Payload });
+        }
+
+        public virtual void Commit(string Key, string MutationName)
+        {
+            if (!_Mutations.ContainsKey(Key))
+                return;
+
+            var (method, mutation) = GetCommit(Key, MutationName);
+
+            if (method == null)
+                return;
+
+            var state = _State[Key];
+
+            method.Invoke(mutation, new object[] { state });
+        }
+
+        private (MethodInfo, IMutations) GetCommit(string Key, string MutationName)
+        {
+            var mutation = _Mutations[Key];
 
             var mutationType = mutation.GetType();
 
@@ -73,13 +100,15 @@ namespace CLFlux
             if (method == null)
                 throw new NotImplementedException($"The method { MutationName } as not implemented");
 
-            method.Invoke(mutation, Payload == null ? new object[] { state } : new object[] { state, Payload });
+            return (method, mutation);
         }
 
-        public virtual object Getters(string Key, string GetterName)
+
+
+        public virtual TReturn Getters<TReturn>(string Key, string GetterName)
         {
             if (!_Getters.ContainsKey(Key))
-                return default(object);
+                return default(TReturn);
 
             var getter = _Getters[Key];
 
@@ -89,13 +118,14 @@ namespace CLFlux
 
             var method = gettersType.GetMethod(GetterName);
 
-            var parameters = this.parameters(method, state);
+            var parameters = this.Parameters(method, state);
 
             if (method == null)
                 throw new NotImplementedException($"The method { GetterName } as not implemented");
 
-            return method.Invoke(getter, parameters);
+            return (TReturn)method.Invoke(getter, parameters);
         }
+
 
         public virtual async Task<object> Dispatch<T>(string Key, string ActionName, T Payload = default(T))
         {
@@ -110,7 +140,7 @@ namespace CLFlux
 
             var method = actionsType.GetMethod(ActionName);
 
-            var parameters = this.parameters(method, state);
+            var parameters = this.Parameters(method, state);
 
             if (method == null)
                 throw new NotImplementedException($"The method { ActionName } as not implemented");
@@ -129,7 +159,7 @@ namespace CLFlux
             }
         }
 
-        private object[] parameters(MethodInfo method, IState state)
+        private object[] Parameters(MethodInfo method, IState state)
         {
             var parametersFromMethod = GetParametersFromMethod(method);
 
@@ -146,43 +176,43 @@ namespace CLFlux
 
             if (parametersNames.Contains("CLGETTERS"))
             {
-                var getterType = parametersFromMethod.First(x => x.name == "CLGETTERS");
+                var (name, type) = parametersFromMethod.First(x => x.name == "CLGETTERS");
 
-                listParamns.Add((getterType.name, GenerateGettersDelegate()));
+                listParamns.Add((name, GenerateGettersDelegate(type)));
             }
 
             if (parametersNames.Contains("CLCOMMIT"))
             {
-                var mutationType = parametersFromMethod.First(x => x.name == "CLCOMMIT");
+                var (name, type) = parametersFromMethod.First(x => x.name == "CLCOMMIT");
 
-                listParamns.Add((mutationType.name, GenerateCommitDelegate(mutationType.type)));
+                listParamns.Add((name, GenerateCommitDelegate(type)));
             }
 
             if (parametersNames.Contains("CLDISPATCH"))
             {
-                var actionType = parametersFromMethod.First(x => x.name == "CLDISPATCH");
+                var (name, type) = parametersFromMethod.First(x => x.name == "CLDISPATCH");
 
-                listParamns.Add((actionType.name, GenerateDispatchDelegate(actionType.type)));
+                listParamns.Add((name, GenerateDispatchDelegate(type)));
             }
 
             return OrderParamns(method, listParamns.ToArray());
         }
 
-        private object GenerateGettersDelegate()
+        private Delegate GenerateGettersDelegate(Type gettersType)
         {
-            //// create the delegate type so we can find the appropriate constructor
-            //var delegateType = typeof(CLDelegate.CLGetters).MakeGenericType(getterType.GenericTypeArguments);
 
-            //// work out concrete type for calling the generic MyMethod
-            //var gettersMethodInfo = this.GetType().GetMethod("Getters");
+            var delegateType = typeof(CLDelegate.CLGetters<>).MakeGenericType(gettersType.GenericTypeArguments);
 
-            //// create an instance of the delegate type wrapping MyMethod so we can pass it to the constructor
-            //var delegateInstance = Delegate.CreateDelegate(delegateType, this, gettersMethodInfo);
+            // work out concrete type for calling the generic MyMethod
+            var dispatchMethodInfo = this.GetType().GetMethod("Getters").MakeGenericMethod(delegateType.GenericTypeArguments);
 
-            return new CLDelegate.CLGetters((getterName, key) => this.Getters(getterName, key));
+            // create an instance of the delegate type wrapping MyMethod so we can pass it to the constructor
+            var delegateInstance = Delegate.CreateDelegate(delegateType, this, dispatchMethodInfo);
+
+            return delegateInstance;
         }
 
-        private object GenerateCommitDelegate(Type commitType)
+        private Delegate GenerateCommitDelegate(Type commitType)
         {
             // create the delegate type so we can find the appropriate constructor
             var delegateType = typeof(CLDelegate.CLCommit<>).MakeGenericType(commitType.GenericTypeArguments);
@@ -195,28 +225,6 @@ namespace CLFlux
             var delegateInstance = Delegate.CreateDelegate(delegateType, this, commitMethodInfo);
 
             return delegateInstance;
-
-
-
-
-
-
-
-
-
-            //var commitMethodInfo = this.GetType().GetMethod("Commit");
-
-            ////var commitWithParams = gettersMethodInfo.MakeGenericMethod(commitType);
-
-            //var del = typeof(CLDelegate.CLCommit<>).MakeGenericType(commitType);
-
-            //return Delegate.CreateDelegate(del, commitMethodInfo);
-
-
-            //return new CLDelegate.CLGetters((key, name) => this.Getters(key, name));
-
-
-            //return (mutationName, payload, key) => Commit(key == "" ? CurrentKey : key, mutationName, payload);
         }
 
         private Delegate GenerateDispatchDelegate(Type dispatchType)
@@ -230,20 +238,36 @@ namespace CLFlux
             var delegateInstance = Delegate.CreateDelegate(delegateType, this, dispatchMethodInfo);
 
             return delegateInstance;
+        }
 
+        private Delegate GenerateDelegate(DelegateType @delegate)
+        {
+            Type delegateType = null;
+            string method = "";
 
+            switch (@delegate)
+            {
+                case DelegateType.Getters:
+                    delegateType = typeof(CLDelegate.CLGetters<>);
+                    method = "Getters";
+                    break;
+                case DelegateType.Commit:
+                    delegateType = typeof(CLDelegate.CLCommit<>);
+                    method = "Commit";
+                    break;
+                case DelegateType.Dispatch:
+                    delegateType = typeof(CLDelegate.CLDispatch<>);
+                    method = "Dispatch";
+                    break;
+            }
 
+            // work out concrete type for calling the generic method
+            var dispatchMethodInfo = this.GetType().GetMethod(method).MakeGenericMethod(delegateType.GenericTypeArguments);
 
+            // create an instance of the delegate type wrapping MyMethod so we can pass it to the constructor
+            var delegateInstance = Delegate.CreateDelegate(delegateType, this, dispatchMethodInfo);
 
-            //var dispatchMethodInfo = this.GetType().GetMethod("Dispatch");
-
-            //var dispatchWithParams = dispatchMethodInfo.MakeGenericMethod(dispatchType);
-
-            //var del = typeof(CLDelegate.CLDispatch<>).MakeGenericType(dispatchType);
-
-            //return Delegate.CreateDelegate(del, dispatchWithParams);
-
-            //return (actionName, payload, key) => (Task<dynamic>)dispatchWithParams.Invoke(this, new[] { key == "" ? CurrentKey : key, actionName, payload });
+            return delegateInstance;
         }
 
         private (string name, Type type)[] GetParametersFromMethod(MethodInfo methodInfo)
@@ -253,11 +277,6 @@ namespace CLFlux
                 .Select(x => (name: GetName(x.ParameterType.Name.ToUpper()), type: x.ParameterType)).ToArray();
 
             return parameters;
-        }
-
-        private string GetName(string name)
-        {
-            return Regex.Replace(name, "[^a-zA-Z]", "");
         }
 
         private object[] OrderParamns(MethodInfo methodInfo, params (string Key, object Value)[] paramns)
@@ -283,6 +302,11 @@ namespace CLFlux
             return list.Select(x => x.Value).ToArray();
         }
 
+        private string GetName(string name)
+        {
+            return Regex.Replace(name, "[^a-zA-Z]", "");
+        }
+
         public void WhenAny<T, TProperty>(string Key, Action<object> action, Expression<Func<T, TProperty>> property) where T : INotifyPropertyChanged
         {
             if (!_State.ContainsKey(Key))
@@ -295,29 +319,36 @@ namespace CLFlux
                 if (GetPropertyInfo(property).Name == e.PropertyName)
                     action(sender.GetType().GetProperty(e.PropertyName).GetValue(sender));
             };
+
+            /// <summary>
+            /// Gets property information for the specified <paramref name="property"/> expression.
+            /// </summary>
+            /// <typeparam name="TSource">Type of the parameter in the <paramref name="property"/> expression.</typeparam>
+            /// <typeparam name="TValue">Type of the property's value.</typeparam>
+            /// <param name="property">The expression from which to retrieve the property information.</param>
+            /// <returns>Property information for the specified expression.</returns>
+            /// <exception cref="ArgumentException">The expression is not understood.</exception>
+            PropertyInfo GetPropertyInfo<TSource, TValue>(Expression<Func<TSource, TValue>> propertyToGetInfo)
+            {
+                if (propertyToGetInfo == null)
+                    throw new ArgumentNullException("property");
+
+                if (!(propertyToGetInfo.Body is MemberExpression body))
+                    throw new ArgumentException("Expression is not a property", "property");
+
+                var propertyInfo = body.Member as PropertyInfo;
+                if (propertyInfo == null)
+                    throw new ArgumentException("Expression is not a property", "property");
+
+                return propertyInfo;
+            }
         }
 
-        /// <summary>
-        /// Gets property information for the specified <paramref name="property"/> expression.
-        /// </summary>
-        /// <typeparam name="TSource">Type of the parameter in the <paramref name="property"/> expression.</typeparam>
-        /// <typeparam name="TValue">Type of the property's value.</typeparam>
-        /// <param name="property">The expression from which to retrieve the property information.</param>
-        /// <returns>Property information for the specified expression.</returns>
-        /// <exception cref="ArgumentException">The expression is not understood.</exception>
-        private PropertyInfo GetPropertyInfo<TSource, TValue>(Expression<Func<TSource, TValue>> property)
+        public enum DelegateType
         {
-            if (property == null)
-                throw new ArgumentNullException("property");
-
-            if (!(property.Body is MemberExpression body))
-                throw new ArgumentException("Expression is not a property", "property");
-
-            var propertyInfo = body.Member as PropertyInfo;
-            if (propertyInfo == null)
-                throw new ArgumentException("Expression is not a property", "property");
-
-            return propertyInfo;
+            Getters,
+            Commit,
+            Dispatch
         }
     }
 }
