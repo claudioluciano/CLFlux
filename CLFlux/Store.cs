@@ -304,8 +304,6 @@ namespace CLFlux
                         method = this.GetType().GetMethods().First(x =>
                          x.Name == "Commit" && x.GetGenericArguments().Count() == 1
                         ).MakeGenericMethod(actionType.GenericTypeArguments);
-
-                        //method = this.GetType().GetMethod("Commit").MakeGenericMethod(actionType.GenericTypeArguments);
                     }
                     else
                     {

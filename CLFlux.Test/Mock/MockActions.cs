@@ -13,13 +13,13 @@ namespace CLFlux.Test.Mock
         {
             await Task.Delay(TimeSpan.FromSeconds(5)).ContinueWith(async a =>
             {
-                var test = clGetters("Teste", "GetValue");
+                var test = clGetters("GetValue");
 
                 state.Value += test;
 
-                clDispatch("Teste", "Decrement", 15);
+                clDispatch("Decrement", 15);
 
-                commit("Teste", "Increment", 15);
+                commit("Increment", 15);
             });
         }
 
