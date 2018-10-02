@@ -4,10 +4,14 @@ namespace CLFlux
 {
     public class CLDelegate
     {
-        public delegate object CLGetters<TReturn>(string Key, string GetterName);
+        public delegate TReturn CLGetters<TReturn>(string Key, string GetterName);
 
-        public delegate void CLCommit<TPayload>(string key, string mutationName, TPayload payloadMutation);
+        public delegate void CLCommit<TPayload>(string Key, string MutationName, TPayload PayloadMutation);
 
-        public delegate Task<object> CLDispatch<TPayload>(string key, string actionName, TPayload payloadAction);
+        public delegate void CLCommit(string Key, string MutationName);
+
+        public delegate Task<TReturn> CLDispatch<TReturn, TPayload>(string Key, string ActionName, TPayload PayloadAction);
+
+        public delegate Task<TReturn> CLDispatch<TReturn>(string Key, string ActionName);
     }
 }

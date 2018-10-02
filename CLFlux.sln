@@ -5,7 +5,7 @@ VisualStudioVersion = 15.0.27703.2042
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CLFlux", "CLFlux\CLFlux.csproj", "{8AF87299-5BAE-4AE4-8DC5-C5BBA7F0145E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CLFlux.Test", "CLFlux.Test\CLFlux.Test.csproj", "{05A3BF15-6953-4219-864B-AE074E7202D9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CLFlux.Test", "CLFlux.Test\CLFlux.Test.csproj", "{C2029ADD-70E9-4372-A698-E752935A7ACA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{8AF87299-5BAE-4AE4-8DC5-C5BBA7F0145E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8AF87299-5BAE-4AE4-8DC5-C5BBA7F0145E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8AF87299-5BAE-4AE4-8DC5-C5BBA7F0145E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{05A3BF15-6953-4219-864B-AE074E7202D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{05A3BF15-6953-4219-864B-AE074E7202D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{05A3BF15-6953-4219-864B-AE074E7202D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{05A3BF15-6953-4219-864B-AE074E7202D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2029ADD-70E9-4372-A698-E752935A7ACA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2029ADD-70E9-4372-A698-E752935A7ACA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2029ADD-70E9-4372-A698-E752935A7ACA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2029ADD-70E9-4372-A698-E752935A7ACA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

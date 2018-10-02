@@ -1,19 +1,12 @@
 ﻿using CLFlux.Test.Mock;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace CLFlux.Test
 {
-    [TestClass]
-
     public class ExempleTest
     {
-        [TestMethod]
+        [Fact]
         public void MutationExemple()
         {
             var store = new Store();
@@ -22,16 +15,16 @@ namespace CLFlux.Test
 
             var mutation = new MockMutation();
 
-            store.Register("Teste", state).
-                  Register("Teste", mutation);
+            store.Register(state).
+                  Register(mutation);
 
-            store.Commit("Teste", "Increment", 50);
+            store.Commit("Increment", 50);
 
 
-            Assert.AreEqual(50, state.Value);
+            Assert.Equal(50, state.Value);
         }
 
-        [TestMethod]
+        [Fact]
         public void GettersExemple()
         {
             IStore store = new Store();
@@ -42,18 +35,18 @@ namespace CLFlux.Test
 
             var mutation = new MockMutation();
 
-            store.Register("Teste", state)
-                 .Register("Teste", getters)
-                 .Register("Teste", mutation);
+            store.Register(state)
+                 .Register(getters)
+                 .Register(mutation);
 
 
-            store.WhenAny<MockState, int>("Teste", HandleValueChanged, x => x.Value);
+            store.WhenAny<MockState, int>(x => x.Value, HandleValueChanged);
 
-            store.Commit("Teste", "Increment", 15);
+            store.Commit("Increment", 15);
 
-            var ret = store.Getters<int>("Teste", "GetValue");
+            var ret = store.Getters<int>("GetValue");
 
-            Assert.AreEqual(15, ret);
+            Assert.Equal(15, ret);
         }
 
         void HandleValueChanged(object propertyName)
@@ -61,7 +54,7 @@ namespace CLFlux.Test
             //handle the property changed, nice
         }
 
-        [TestMethod]
+        [Fact]
         public async Task ActionExemple()
         {
             IStore store = new Store();
@@ -74,22 +67,22 @@ namespace CLFlux.Test
 
             var actions = new MockActions();
 
-            store.Register("Teste", state)
-                 .Register("Teste", getters)
-                 .Register("Teste", mutation)
-                 .Register("Teste", actions);
+            store.Register(state)
+                 .Register(getters)
+                 .Register(mutation)
+                 .Register(actions);
 
-            store.Commit("Teste", "Increment", 50);
+            store.Commit("Increment", 50);
 
-            var ret1 = await store.Dispatch<int>("Teste", "Increment");
+            var ret1 = await store.Dispatch<int, int>("Increment", 15);
 
             //await store.Dispatch("Teste", "IncrementTeste");
 
             //var ret2 = await store.Dispatch<int>("Teste", "Increment");
 
-            var ret = store.Getters<int>("Teste", "GetValue");
+            var ret = store.Getters<int>("GetValue");
 
-            Assert.AreEqual(80, ret);
+            Assert.Equal(100, ret);
         }
 
     }

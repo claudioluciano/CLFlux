@@ -7,22 +7,48 @@ namespace CLFlux
 {
     public interface IStore
     {
-        void Commit<T>(string Key, string MutationName, T Payload = default(T));
+        void Commit<TPayload>(string MutationName, TPayload Payload, string Key = Constraints.DefaultKey);
 
-        void Commit(string Key, string MutationName);
+        void Commit(string MutationName, string Key = Constraints.DefaultKey);
 
-        TReturn Getters<TReturn>(string Key, string GetterName);
+        TReturn Getters<TReturn>(string GetterName, string Key = Constraints.DefaultKey);
 
-        Task<object> Dispatch<T>(string Key, string Actions, T Payload = default(T));
+        Task<TReturn> Dispatch<TReturn>(string ActionName, string Key = Constraints.DefaultKey);
 
-        void WhenAny<T, TProperty>(string Key, Action<object> action, Expression<Func<T, TProperty>> property) where T : INotifyPropertyChanged;
+        Task<TReturn> Dispatch<TReturn, TPayload>(string ActionName, TPayload Payload, string Key = Constraints.DefaultKey);
 
-        Store Register(string Key, IState Value);
+        void WhenAny<T, TProperty>(Expression<Func<T, TProperty>> property, Action<object> action, string Key = Constraints.DefaultKey) where T : INotifyPropertyChanged;
 
-        Store Register(string Key, IGetters Value);
+        /// <summary>
+        /// Register the state to the store
+        /// </summary>
+        /// <param name="Value">State</param>
+        /// <param name="Key">Key</param>
+        /// <returns></returns>
+        Store Register(IState Value, string Key = Constraints.DefaultKey);
 
-        Store Register(string Key, IMutations Value);
+        /// <summary>
+        /// Register the getter to the store
+        /// </summary>
+        /// <param name="Value">State</param>
+        /// <param name="Key">Key</param>
+        /// <returns></returns>
+        Store Register(IGetters Value, string Key = Constraints.DefaultKey);
 
-        Store Register(string Key, IActions Value);
+        /// <summary>
+        /// Register the mutations to the store
+        /// </summary>
+        /// <param name="Value">State</param>
+        /// <param name="Key">Key</param>
+        /// <returns></returns>
+        Store Register(IMutations Value, string Key = Constraints.DefaultKey);
+
+        /// <summary>
+        /// Register the actions to the store
+        /// </summary>
+        /// <param name="Value">State</param>
+        /// <param name="Key">Key</param>
+        /// <returns></returns>
+        Store Register(IActions Value, string Key = Constraints.DefaultKey);
     }
 }
