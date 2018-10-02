@@ -9,8 +9,13 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <licenseUrl>https://github.com/claudioluciano/CLFlux/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/claudioluciano/CLFlux</projectUrl>
-    <description>CLFlux is a state management pattern for .NET based on Vuex.</description>
-    <summary>Feel free to contribute, any help are welcome</summary>
+    <description>
+        CLFlux is a centralized State Management for  for .NET based on Vuex.
+    </description>
+    <summary>
+        CLFlux is a centralized State Management for  for .NET based on Vuex.
+        Feel free to contribute, any help are welcome
+    </summary>
     <releaseNotes>
       [1.5.0] - Add Default Key. (now the last parameter on every method)
                 Add strong type returns.
