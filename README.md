@@ -1,3 +1,4 @@
+
 # CLFlux
 
 CLFlux is a state management pattern + library for .NET applications based for .NET on [Vuex](https://github.com/vuejs/vuex).
@@ -33,7 +34,6 @@ Actions can be asynchronous or synchronous.
             return state.Value;
         }
     }
-
 ```
 #### Mutations
 ```csharp
@@ -80,11 +80,15 @@ The "App" in *store.Register(("App", state))* is the key for the module, you can
 
 ##### The Delegate actions for Actions and Getters
 ```csharp
-   public delegate object CLGetters(string Key, string GetterName);
-
-   public delegate void CLCommit<TPayload>(string key, string mutationName, TPayload payloadMutation);
-
-   public delegate Task<object> CLDispatch<TPayload>(string key, string actionName, TPayload payloadAction);
+public delegate TReturn CLGetters<TReturn>(string GetterName, string Key = Constraints.DefaultKey);
+ 
+public delegate void CLCommit<TPayload>(string MutationName, TPayload PayloadMutation, string Key = Constraints.DefaultKey);
+ 
+public delegate void CLCommit(string MutationName, string Key = Constraints.DefaultKey);
+ 
+public delegate Task<TReturn> CLDispatch<TReturn, TPayload>(string ActionName, TPayload PayloadAction, string Key = Constraints.DefaultKey);
+ 
+public delegate Task<TReturn> CLDispatch<TReturn>(string ActionName, string Key = Constraints.DefaultKey);
 ```
 ##### The key is optional if you leave it blank the method will use the same key as the current module
 
@@ -116,7 +120,7 @@ public async Task<int> Increment(CLDelegate.CLCommit<int> commit, MockState stat
 #### WhenAny
 You can track a property with WhenAny like this.
 ```csharp
-store.WhenAny<MockState, int>("Teste", HandleValueChanged, x => x.Value);
+store.WhenAny<MockState, int>(, x => x.Value, HandleValueChanged, "App");
 
 void HandleValueChanged(object value)
 {
@@ -136,13 +140,14 @@ IMutations mutation = new MyMutation();
 
 IActions actions = new MyActions();
  
-store.Register("App", state)
-     .Register("App", getters)
-     .Register("App", mutation)
-     .Register("App", actions);   
+store.Register(state)
+     .Register(getters)
+     .Register(mutation)
+     .Register(actions);   
 
  //Increment mutation
-store.Commit("App", "Increment", 50);
+		//Payload, Return
+store.Commit<int, int>("App", "Increment", 50);
  
  //Increment async Action with fixed value
 var ret1 = await store.Dispatch<int>("App", "Increment");
